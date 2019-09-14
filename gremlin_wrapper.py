@@ -56,6 +56,17 @@ class GremlinWrapper(object):
             .property('login', login)) \
         .toList()
 
+    def add_repository(self, name):
+        # add a user to the gremlin graph
+        return self.g.V() \
+        .has('repository', 'name', name) \
+        .fold() \
+        .coalesce(
+            unfold(),
+            addV('github_user') \
+            .property('name', name)) \
+        .iterate()
+
 
     def get_list_of_indigitous_users(self):
         #get a list of all people through name property.
