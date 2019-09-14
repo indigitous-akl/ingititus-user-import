@@ -33,3 +33,23 @@ To Run
 
     docker-compose -f docker-compose-cql-es-consoleonly.yml up -d
     docker attach jce-gremlin-consoleonly
+
+
+Learning Gremlin
+================
+
+http://tinkerpop.apache.org/docs/current/reference/
+
+Try out the following (from the above URL):
+```java
+gremlin> graph = TinkerFactory.createModern() //1
+==>tinkergraph[vertices:6 edges:6]
+gremlin> g = graph.traversal()        //2
+==>graphtraversalsource[tinkergraph[vertices:6 edges:6], standard]
+gremlin> g.V().has('name','marko').out('knows').values('name') //3
+==>vadas
+==>josh
+```
+
+
+<img src="http://tinkerpop.apache.org/docs/current/images/tinkerpop-classic-ex1.png" alt="Gremlin Example Graph" width="500">
