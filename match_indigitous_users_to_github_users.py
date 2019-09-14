@@ -23,7 +23,6 @@ from gremlin_python.process.traversal import Bindings
 from gremlin_python.process.traversal import WithOptions
 from gremlin_python.driver.protocol import GremlinServerError
 
-
 def constructQueryWithEmail(email):
     begin = '''
     {{ search(query: "{} in:email", type: USER, first:10) {{'''.format(email)
@@ -49,9 +48,7 @@ def getQL():
     print(token)
     client.inject_token(token)
 
-  ip = "localhost"
-  port = "8182"
-  connection = "ws://" + ip +":"+ port + "/gremlin"
+  gremlin_url = os.environ['GREMLIN_URL']
   gremlin = GremlinWrapper(connection)
   users = gremlin.get_list_of_indigitous_users()
   print(users)
@@ -82,6 +79,5 @@ def getQL():
         gremlin.edge_vertices('is', indigitous_user_vertex, gh_user_vertex)
       except GremlinServerError:
         pass
-
 
 getQL()
