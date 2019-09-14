@@ -19,12 +19,8 @@ Linux: https://runnable.com/docker/install-docker-on-linux
     docker pull bramford/janusgraph:0.4.0 && docker tag bramford/janusgraph:0.4.0 janusgraph/janusgraph:latest
     # [Optional] pip install docker-compose
     docker-compose -f docker-compose-cql-es-consoleonly.yml up -d
+    docker attach jce-gremlin-consoleonly
 
 ## Gremlin
 
     export GREMLIN_URL="ws://10.1.1.70:8182/gremlin"
-
-To run
-======
-
-    docker attach jce-gremlin-consoleonly
