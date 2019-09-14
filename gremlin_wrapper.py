@@ -22,7 +22,7 @@ from gremlin_python.process.traversal import WithOptions
 #print("Vertices: {}".format(g.V().toList()))
 #remote_connection.close()
 
-class GremlinInserter(object):
+class GremlinWrapper(object):
     def __init__(self, remote_gremlin_server):
         self.remote_server = remote_gremlin_server
         self.remote_connection = DriverRemoteConnection(remote_gremlin_server,'g')
@@ -32,11 +32,30 @@ class GremlinInserter(object):
     def add_indigitous_user(self, login, email, name, uid):
         # add a user to the gremlin graph
         #self.g.addV('indigitous_user').property('name', name).property('uid', uid).property('email', email).property('login', login).toList()
-        self.g.V().has('indigitous_user', 'uid', uid).fold().coalesce(unfold(), addV('indigitous_user').property('name', name).property('uid', uid).property('email', email).property('login', login)).toList()
+        self.g.V() \
+        .has('indigitous_user', 'uid', uid) \
+        .fold() \
+        .coalesce(
+            unfold(),
+            addV('indigitous_user') \
+            .property('name', name) \
+            .property('uid', uid) \
+            .property('email', email) \
+            .property('login', login)) \
+        .toList()
 
     def add_github_user(self, login, email, name, uid):
         # add a user to the gremlin graph
-        self.g.V().has('github_user', 'uid', uid).fold().coalesce(unfold(), addV('github_user').property('name', name).property('uid', uid).property('email', email).property('login', login)).toList()
+        self.g.V().has('github_user', 'uid', uid) \
+        .fold() \
+        .coalesce(
+            unfold(),
+            addV('github_user')
+            .property('name', name) \
+            .property('uid', uid) \
+            .property('email', email) \
+            .property('login', login)) \
+        .toList()
 
     def close(self):
         self.remote_connection.close()

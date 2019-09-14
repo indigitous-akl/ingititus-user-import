@@ -5,10 +5,11 @@ import os
 from email_validator import validate_email, EmailNotValidError
 from graphqlclient import GraphQLClient
 
-from insert_user_gremlin import GremlinInserter
+from gremlin_wrapper import GremlinWrapper
 
 client = GraphQLClient("https://api.github.com/graphql")
 client.inject_token("bearer " + os.environ['GITHUB_TOKEN'])
+gremlin_url = os.environ['GREMLIN_URL']
 
 def get_random_users(num_users, query="test"):
     page_size = num_users
@@ -16,7 +17,7 @@ def get_random_users(num_users, query="test"):
 
     query_search_string = 'search(query: "{}", type: USER, first: {})'.format(query, page_size)
 
-    gremlin_inserter = GremlinInserter("ws://localhost:8182/gremlin")
+    gremlin = GremlinWrapper(gremlin_url)
 
     count = 0;
     while (count < num_users):
@@ -63,7 +64,7 @@ def get_random_users(num_users, query="test"):
                     except EmailNotValidError:
                         continue
                     users.append({'login': login, 'name': name, 'email': email, 'uid': uid})
-                    gremlin_inserter.add_indigitous_user(login, email, name, uid)
+                    gremlin.add_indigitous_user(login, email, name, uid)
                     count+=1
 
             page_info = result['data']['search']['pageInfo']
@@ -76,7 +77,7 @@ def get_random_users(num_users, query="test"):
         except KeyError:
             print(json.dumps(result))
 
-    gremlin_inserter.close()
+    gremlin.close()
     return users
 
 if __name__ == "__main__":
