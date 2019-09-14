@@ -31,7 +31,6 @@ class GremlinWrapper(object):
 
     def add_indigitous_user(self, login, email, name, uid):
         # add a user to the gremlin graph
-        #self.g.addV('indigitous_user').property('name', name).property('uid', uid).property('email', email).property('login', login).toList()
         self.g.V() \
         .has('indigitous_user', 'uid', uid) \
         .fold() \
@@ -46,7 +45,7 @@ class GremlinWrapper(object):
 
     def add_github_user(self, login, email, name, uid):
         # add a user to the gremlin graph
-        self.g.V().has('github_user', 'uid', uid) \
+        return self.g.V().has('github_user', 'uid', uid) \
         .fold() \
         .coalesce(
             unfold(),
@@ -56,6 +55,30 @@ class GremlinWrapper(object):
             .property('email', email) \
             .property('login', login)) \
         .toList()
+
+
+    def get_list_of_indigitous_users(self):
+        #get a list of all people through name property.
+         return self.g.V() \
+                .hasLabel('indigitous_user') \
+                .group() \
+                    .by(__.id()) \
+                    .by('email') \
+                .toList()
+
+    def edge_vertices(self, label, from_v, to_v):
+        # Edge vertices
+        return self.g.E() \
+        .hasLabel(label) \
+        .where(outV().hasId(from_v)) \
+        .where(inV().hasId(to_v)) \
+        .fold() \
+        .coalesce( \
+            unfold(), \
+            addE(label) \
+            .from_(V(from_v)) \
+            .to(V(to_v))) \
+            .iterate()
 
     def close(self):
         self.remote_connection.close()
