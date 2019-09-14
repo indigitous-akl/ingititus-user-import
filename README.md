@@ -5,6 +5,7 @@ Installation
 ## Docker
 
 Linux: https://runnable.com/docker/install-docker-on-linux
+Mac: https://docs.docker.com/docker-for-mac/install/
 
 ## Python Requirements
 
