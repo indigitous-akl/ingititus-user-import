@@ -94,15 +94,15 @@ class GremlinWrapper(object):
             .property('name', language)) \
         .next()
 
-    def add_repository(self, name):
+    def add_repository(self, nameWithOwner):
         # add a user to the gremlin graph
         return self.g.V() \
-        .has('repository', 'name', name) \
+        .has('repository', 'nameWithOwner', nameWithOwner) \
         .fold() \
         .coalesce(
             unfold(),
             addV('github_user') \
-            .property('name', name)) \
+            .property('nameWithOwner', nameWithOwner)) \
         .iterate()
 
 
@@ -113,6 +113,17 @@ class GremlinWrapper(object):
                 .group() \
                     .by(__.id()) \
                     .by('email') \
+                .toList()
+
+    def get_github_indigitous_users_by_github_login(self):
+        #get a list of all people through name property.
+         return self.g.V() \
+                .hasLabel('indigitous_user') \
+                .out('is') \
+                .hasLabel('github_user') \
+                .group() \
+                    .by(__.id()) \
+                    .by('login') \
                 .toList()
 
     def edge_vertices(self, label, from_v, to_v):
