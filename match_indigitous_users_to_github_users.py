@@ -23,15 +23,6 @@ from gremlin_python.process.traversal import Bindings
 from gremlin_python.process.traversal import WithOptions
 from gremlin_python.driver.protocol import GremlinServerError
 
-def convert(list):
-
-    # Converting integer list to string list
-    s = [str(i) for i in list]
-
-    # Join list items using join()
-    res = "".join(s)
-
-    return(res)
 
 def constructQueryWithEmail(email):
     begin = '''
@@ -52,11 +43,11 @@ def constructQueryWithEmail(email):
 
     return begin + end
 
-def getQL(param):
-  client = GraphQLClient("https://api.github.com/graphql")
-  token = "bearer " + os.environ['GITHUB_TOKEN']
-  print(token)
-  client.inject_token(token)
+def getQL():
+    client = GraphQLClient("https://api.github.com/graphql")
+    token = "bearer " + os.environ['GITHUB_TOKEN']
+    print(token)
+    client.inject_token(token)
 
   ip = "localhost"
   port = "8182"
@@ -93,4 +84,4 @@ def getQL(param):
         pass
 
 
-getQL("tada")
+getQL()

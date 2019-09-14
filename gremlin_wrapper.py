@@ -1,6 +1,7 @@
 #!/usr/bin.env python
 from gremlin_python import statics
 from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
+from gremlin_python.driver.protocol import GremlinServerError
 from gremlin_python.process.anonymous_traversal import traversal
 from gremlin_python.process.graph_traversal import __
 from gremlin_python.process.strategies import *
@@ -31,7 +32,7 @@ class GremlinWrapper(object):
 
     def add_indigitous_user(self, login, email, name, uid):
         # add a user to the gremlin graph
-        self.g.V() \
+        return self.g.V() \
         .has('indigitous_user', 'uid', uid) \
         .fold() \
         .coalesce(
@@ -41,7 +42,7 @@ class GremlinWrapper(object):
             .property('uid', uid) \
             .property('email', email) \
             .property('login', login)) \
-        .toList()
+        .next()
 
     def add_github_user(self, login, email, name, uid):
         # add a user to the gremlin graph
@@ -54,7 +55,44 @@ class GremlinWrapper(object):
             .property('uid', uid) \
             .property('email', email) \
             .property('login', login)) \
-        .toList()
+        .next()
+
+
+    def add_repo(self, repo_id, name, language_name, email=None):
+        # get user by email to add "owns" edge
+        language = self.add_language(language_name)
+        repo = self.g.V().has('repository', 'uid', repo_id) \
+        .fold() \
+        .coalesce(
+            unfold(),
+            addV('repository')
+            .property('name', name) \
+            .property('uid', repo_id)) \
+        .next()
+
+        # repository has primary language
+        if language_name:
+            print("Trying to add edge between {} and {}".format(name, language_name))
+            self.g.V(repo).as_('v').V(language).coalesce(__.inE('primary_language').where(outV().as_('v')), addE('primary_language').from_('v'))
+
+        if email:
+            user = self.g.V().has('github_user', 'email', email).next()
+            # user owns repo
+            self.g.V(user).as_('v').V(repo).coalesce(__.inE('owns').where(outV().as_('v')), addE('owns').from_('v'))
+
+        return repo
+
+
+    def add_language(self, language):
+        if not language:
+            return
+        return self.g.V().has('language', 'name', language) \
+        .fold() \
+        .coalesce(
+            unfold(),
+            addV('language')
+            .property('name', language)) \
+        .next()
 
     def add_repository(self, name):
         # add a user to the gremlin graph
@@ -90,6 +128,13 @@ class GremlinWrapper(object):
             .from_(V(from_v)) \
             .to(V(to_v))) \
             .iterate()
+
+    def add_fork(self, repo_id, email, name, language, parent_repo_id, parent_repo_name, parent_repo_language):
+        fork = self.add_repo(repo_id, name, language, email=email)
+        parent = self.add_repo(parent_repo_id, parent_repo_name, parent_repo_language)
+        self.g.V(fork).as_('v').V(parent).coalesce(__.inE('forks').where(outV().as_('v')), addE('forks').from_('v'))
+        return fork
+
 
     def close(self):
         self.remote_connection.close()
