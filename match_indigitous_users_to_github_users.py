@@ -71,7 +71,7 @@ def getQL():
       result = obj['data']['search']['nodes'][0]
       name = result['name']
       uid = result['id']
-      name = result['email']
+      email = result['email']
       login = result['login']
       gh_user_vertex = gremlin.add_github_user(login, email, name, uid)
       print(gh_user_vertex)
