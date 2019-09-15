@@ -14,80 +14,84 @@ class ForkFetcher(object):
         gremlin_url = os.environ['GREMLIN_URL']
         self.gremlin = GremlinWrapper(gremlin_url)
 
-    def get_forks(self, email, pagination=100):
+    def get_forks(self, login, pagination=100):
         user_forks = []
         hasNextPage = True
 
-        query_search_string = 'search(query: "{}", type: USER, first: 1)'.format(email)
         repositories_search_string = 'repositories(isFork: true first: {})'.format(pagination)
 
+        # TODO: Don't search, just query user directly
         while hasNextPage:
-            full_query_string = """{
-             """ + query_search_string + """ {
-                userCount
-                edges {
-                  node {
-                    ... on User {
-                      name
-                      login
-                      id
-                      """ + repositories_search_string + """ {
-                        totalCount
-                        edges {
-                          node {
-                            name
+            full_query_string = """
+                query User ($login: String!){
+                  user(login: $login) {
+                    id
+                    """ + repositories_search_string + """ {
+                      totalCount
+                      edges {
+                        node {
+                          nameWithOwner
+                          id
+                          parent {
+                            nameWithOwner
                             id
-                            parent {
-                              name
+                            owner {
+                              login
                               id
-                              owner {
-                                login
-                              }
-                              primaryLanguage {
-                                name
-                              }
                             }
                             primaryLanguage {
+                              id
                               name
                             }
                           }
+                          primaryLanguage {
+                            id
+                            name
+                          }
                         }
-                        pageInfo {
-                          endCursor
-                          hasNextPage
-                        }
+                      }
+                      pageInfo {
+                        endCursor
+                        hasNextPage
                       }
                     }
                   }
-                }
-              }
-            }"""
-            result = json.loads(self.client.execute(full_query_string))
-            forks = result['data']['search']['edges'][0]['node']['repositories']
+                }"""
+
+            #print(full_query_string)
+
+            result = json.loads(self.client.execute(full_query_string, variables={'login': login}))
+            #print(result)
+            forks = result['data']['user']['repositories']
             for fork in forks['edges']:
                 # basic fork details
-                name = fork['node']['name']
+                name = fork['node']['nameWithOwner']
                 fork_id = fork['node']['id']
                 if fork['node']['primaryLanguage']:
                     language = fork['node']['primaryLanguage']['name']
+                    language_id = fork['node']['primaryLanguage']['id']
                 else:
                     language = None
+                    language_id = None
 
                 # fork parent details
                 # 'fork' ->- FORKS ->-'parent'
                 fork_parent_repo = fork['node']['parent']
-                fork_parent_repo_name = fork_parent_repo['name']
+                if not fork_parent_repo:
+                    continue
+                fork_parent_repo_name = fork_parent_repo['nameWithOwner']
                 fork_parent_repo_id = fork_parent_repo['id']
                 fork_parent_repo_owner_login = fork_parent_repo['owner']['login']
                 if fork_parent_repo['primaryLanguage']:
-                    fork_parent_repo_language = fork['node']['primaryLanguage']['name']
+                    fork_parent_repo_language = fork_parent_repo['primaryLanguage']['name']
+                    fork_parent_repo_language_id = fork_parent_repo['primaryLanguage']['id']
                 else:
                     fork_parent_repo_language = None
+                    fork_parent_repo_language_id = None
 
                 user_forks.append({'name': name, 'id': fork_id, 'language': language})
                 print("{} ({}) - forks {}/{} ({})".format(name, language, fork_parent_repo_owner_login, fork_parent_repo_name, fork_parent_repo_language))
-                print(email)
-                self.gremlin.add_fork(fork_id, email, name, language, fork_parent_repo_id, fork_parent_repo_name, fork_parent_repo_language)
+                self.gremlin.add_fork(fork_id, login, name, language, language_id, fork_parent_repo_id, fork_parent_repo_name, fork_parent_repo_language, fork_parent_repo_language_id)
 
             hasNextPage = forks['pageInfo']['hasNextPage']
             repositories_search_string = 'repositories(isFork: true first: {} after: "{}")'.format(pagination, forks['pageInfo']['endCursor'])
@@ -96,6 +100,16 @@ class ForkFetcher(object):
 
 
 if __name__ == "__main__":
-    email = sys.argv[1]
     fork_fetcher = ForkFetcher(os.environ['GITHUB_TOKEN'])
-    result = fork_fetcher.get_forks(email)
+    github_users = fork_fetcher.gremlin.get_github_users()
+
+    # for debug
+    skips = []
+
+    for login in github_users:
+        if login in skips:
+            print("Skipping {}".format(login))
+            continue
+        print(login)
+        fork_fetcher.get_forks(login)
+

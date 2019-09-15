@@ -17,7 +17,8 @@ from gremlin_python.process.traversal import Scope
 from gremlin_python.process.traversal import T
 from gremlin_python.process.traversal import WithOptions
 
-remote_connection = DriverRemoteConnection('ws://localhost:8182/gremlin','g')
+remote_connection = DriverRemoteConnection('ws://10.1.1.70:8182/gremlin','g')
 g = traversal().withRemote(remote_connection)
-print("Vertices: {}".format(g.V().toList()))
+#print("Edges: {}".format(g.E().toList()))
+print("Languages: {}".format(g.V().hasLabel('language').valueMap().toList()))
 remote_connection.close()
