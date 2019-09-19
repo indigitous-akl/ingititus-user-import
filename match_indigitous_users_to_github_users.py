@@ -48,36 +48,38 @@ def getQL():
     print(token)
     client.inject_token(token)
 
-  gremlin_url = os.environ['GREMLIN_URL']
-  gremlin = GremlinWrapper(connection)
-  users = gremlin.get_list_of_indigitous_users()
-  print(users)
+    gremlin_url = os.environ['GREMLIN_URL']
+    gremlin = GremlinWrapper(gremlin_url)
+    users = gremlin.get_list_of_indigitous_users()
+    print(users)
 
-  for indigitous_user_vertex, email in users[0].items():
-      if len(email) < 1:
-        continue
-      email = email[0]
-      print(indigitous_user_vertex)
-      print(email)
-      query = constructQueryWithEmail(email)
-      print(query)
-      result = client.execute(query)
-      print(result)
-      obj = json.loads(result)
-      print(obj)
-      #{'data':{'search': {'nodes': [{'name': 'Agis Anastasopoulos', 'login': 'agis', 'email': 'a@xz0.org', 'id': 'MDQ6VXNlcjgyNzIyNA==', 'databaseId': 827224}]}}}
-      if len(obj['data']['search']['nodes']) < 1:
-        continue
-      result = obj['data']['search']['nodes'][0]
-      name = result['name']
-      uid = result['id']
-      email = result['email']
-      login = result['login']
-      gh_user_vertex = gremlin.add_github_user(login, email, name, uid)
-      print(gh_user_vertex)
-      try:
-        gremlin.edge_vertices('is', indigitous_user_vertex, gh_user_vertex)
-      except GremlinServerError:
-        pass
+    for indigitous_user_vertex, email in users[0].items():
+        if len(email) < 1:
+          continue
+        email = email[0]
+        print(indigitous_user_vertex)
+        print(email)
+        query = constructQueryWithEmail(email)
+        print(query)
+        result = client.execute(query)
+        print(result)
+        obj = json.loads(result)
+        print(obj)
+        #{'data':{'search': {'nodes': [{'name': 'Agis Anastasopoulos', 'login': 'agis', 'email': 'a@xz0.org', 'id': 'MDQ6VXNlcjgyNzIyNA==', 'databaseId': 827224}]}}}
+        if len(obj['data']['search']['nodes']) < 1:
+          continue
+        if obj['data']['search']['nodes'][0] == {}:
+          continue
+        result = obj['data']['search']['nodes'][0]
+        name = result['name']
+        uid = result['id']
+        email = result['email']
+        login = result['login']
+        gh_user_vertex = gremlin.add_github_user(login, email, name, uid)
+        print(gh_user_vertex)
+        try:
+          gremlin.edge_vertices('is', indigitous_user_vertex, gh_user_vertex)
+        except GremlinServerError:
+          pass
 
 getQL()

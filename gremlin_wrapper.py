@@ -46,16 +46,27 @@ class GremlinWrapper(object):
 
     def add_github_user(self, login, email, name, uid):
         # add a user to the gremlin graph
-        return self.g.V().has('github_user', 'uid', uid) \
-        .fold() \
-        .coalesce(
-            unfold(),
-            addV('github_user')
-            .property('name', name) \
-            .property('uid', uid) \
-            .property('email', email) \
-            .property('login', login)) \
-        .next()
+        if name is None:
+            return self.g.V().has('github_user', 'uid', uid) \
+            .fold() \
+            .coalesce(
+                unfold(),
+                addV('github_user')
+                .property('uid', uid) \
+                .property('email', email) \
+                .property('login', login)) \
+            .next()
+        else:
+            return self.g.V().has('github_user', 'uid', uid) \
+            .fold() \
+            .coalesce(
+                unfold(),
+                addV('github_user')
+                .property('name', name) \
+                .property('uid', uid) \
+                .property('email', email) \
+                .property('login', login)) \
+            .next()
 
 
     def add_repo(self, repo_id, name_with_owner, language_name, language_id, login=None):
